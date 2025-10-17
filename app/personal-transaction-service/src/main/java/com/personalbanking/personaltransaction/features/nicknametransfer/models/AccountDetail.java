@@ -1,7 +1,6 @@
 package com.personalbanking.personaltransaction.features.nicknametransfer.models;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 public record AccountDetail(
         Long id,
@@ -13,6 +12,6 @@ public record AccountDetail(
         Long roleId,
         Long nicknameId,
         Long kycId,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        String createdAt,
+        String updatedAt
 ) {}

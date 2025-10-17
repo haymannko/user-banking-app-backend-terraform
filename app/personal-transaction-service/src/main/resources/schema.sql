@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS account_detail (
       role_id BIGINT,
       nickname_id BIGINT,
       kyc_id BIGINT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at VARCHAR(255) DEFAULT TO_CHAR(NOW(), 'YYYY-MM-DD HH24:MI:SS'),
+      updated_at VARCHAR(255) DEFAULT TO_CHAR(NOW(), 'YYYY-MM-DD HH24:MI:SS'),
       CONSTRAINT fk_acc_type FOREIGN KEY (account_type_id) REFERENCES account_type(id),
       CONSTRAINT fk_nickname FOREIGN KEY (nickname_id) REFERENCES nickname(id)
     );
@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS transactions (
     debit_account_id BIGINT NOT NULL,
     amount DECIMAL(15,2) NOT NULL,
     status VARCHAR(50) DEFAULT 'PENDING',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at VARCHAR(255) DEFAULT TO_CHAR(NOW(), 'YYYY-MM-DD HH24:MI:SS'),
+    updated_at VARCHAR(255) DEFAULT TO_CHAR(NOW(), 'YYYY-MM-DD HH24:MI:SS'),
     CONSTRAINT fk_tx_credit FOREIGN KEY (credit_account_id) REFERENCES account_detail(id),
     CONSTRAINT fk_tx_debit FOREIGN KEY (debit_account_id) REFERENCES account_detail(id)
     );

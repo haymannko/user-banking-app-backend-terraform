@@ -13,11 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @GrpcService
 public class NicknameTransferServiceImpl extends NicknameTransferServiceGrpc.NicknameTransferServiceImplBase {
 
     private final NicknameTransferRepository nicknameTransferRepository;
+    private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Autowired
     public NicknameTransferServiceImpl(NicknameTransferRepository nicknameTransferRepository) {
@@ -30,6 +32,10 @@ public class NicknameTransferServiceImpl extends NicknameTransferServiceGrpc.Nic
         try {
             // TODO: Extract from metadata
             Long currentUserId = 123L;
+
+            if(request.getNicknameId() <= 0){
+                throw status(Status.INVALID_ARGUMENT, "Nickname ID must be positive");
+            }
 
             var nicknameOpt = nicknameTransferRepository.findNicknameById(request.getNicknameId());
             if (nicknameOpt.isEmpty()) {
@@ -59,15 +65,14 @@ public class NicknameTransferServiceImpl extends NicknameTransferServiceGrpc.Nic
                     currentUserId
             );
 
-            var now = LocalDateTime.now();
             var txn = new Transaction(
                     null,
                     toAccount.id(),
                     fromAccount.id(),
                     BigDecimal.ZERO,
                     "PREPARED",
-                    now,
-                    now
+                    LocalDateTime.now().format(DT_FMT),
+                    LocalDateTime.now().format(DT_FMT)
             );
 
             nicknameTransferRepository.saveTransaction(txn);

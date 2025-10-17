@@ -3,7 +3,6 @@ package com.personalbanking.personaltransaction.features.nicknametransfer.models
 import org.springframework.cglib.core.Local;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 public record Transaction(
         Long id,
@@ -11,6 +10,6 @@ public record Transaction(
         Long debitAccountId,
         BigDecimal amount,
         String status,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        String createdAt,
+        String updatedAt
 ) {}

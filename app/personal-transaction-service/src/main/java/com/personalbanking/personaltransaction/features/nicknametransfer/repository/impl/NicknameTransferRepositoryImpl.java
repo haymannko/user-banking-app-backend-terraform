@@ -36,8 +36,8 @@ public class NicknameTransferRepositoryImpl implements NicknameTransferRepositor
                     rs.getLong("role_id"),
                     rs.getLong("nickname_id"),
                     rs.getLong("kyc_id"),
-                    rs.getTimestamp("created_at").toLocalDateTime(),
-                    rs.getTimestamp("updated_at").toLocalDateTime()
+                    rs.getString("created_at"),
+                    rs.getString("updated_at")
             );
 
     @Override

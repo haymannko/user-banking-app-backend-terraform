@@ -1,4 +1,4 @@
-package com.corporatebanking.gateway.controller.nickname;
+package com.personalbanking.gateway.controller.nickname;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.corporatebanking.gateway.dto.nickname.CreateNicknameRequestDto;
-import com.corporatebanking.gateway.dto.nickname.NicknameResponseDto;
-import com.corporatebanking.gateway.dto.nickname.UpdateNicknameRequestDto;
+import com.personalbanking.gateway.dto.nickname.CreateNicknameRequestDto;
+import com.personalbanking.gateway.dto.nickname.NicknameResponseDto;
+import com.personalbanking.gateway.dto.nickname.UpdateNicknameRequestDto;
 import com.corporatebanking.nickname.grpc.CreateNicknameRequest;
 import com.corporatebanking.nickname.grpc.DeleteNicknameRequest;
 import com.corporatebanking.nickname.grpc.DeleteNicknameResponse;

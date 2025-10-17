@@ -4,6 +4,6 @@ COPY src/main/proto ./src/main/proto
 
 FROM eclipse-temurin:17-jre
 
-COPY ./target/personal-user-service-0.0.1-SNAPSHOT.jar personal-user-app.jar
-EXPOSE 3501 7094
+COPY ./target/personal-transaction-service-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 3502 7095
 ENTRYPOINT ["java","-jar","app.jar"]

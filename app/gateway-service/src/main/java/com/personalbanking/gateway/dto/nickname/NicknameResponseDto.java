@@ -1,4 +1,4 @@
-package com.corporatebanking.gateway.dto.nickname;
+package com.personalbanking.gateway.dto.nickname;
 
 public record NicknameResponseDto(
 	    Long id,

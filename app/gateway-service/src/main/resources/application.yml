@@ -4,5 +4,8 @@ server:
 grpc:
   client:
     nickname-service:
-      address: 'static://localhost:9093'
+      address: 'static://nickname-service:9093'
+      negotiation-type: plaintext
+    personal-transaction-service:
+      address: 'static://personal-transaction-service:7095'
       negotiation-type: plaintext

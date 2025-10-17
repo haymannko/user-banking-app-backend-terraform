@@ -3,10 +3,16 @@ server:
 
 spring:
   datasource:
-    url: ${PERSONAL_DB_URL}
-    username: ${PERSONAL_DB_USERNAME}
-    password: ${PERSONAL_DB_PASSWORD}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driverClassName: org.postgresql.Driver
+  sql:
+    init:
+      mode: always
+      platform: postgresql
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
 
 grpc:
   server:

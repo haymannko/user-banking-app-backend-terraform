@@ -12,39 +12,34 @@ jobs:
     name: Build & Test Changed Services
     needs: detect
     runs-on: ubuntu-latest
-    if: needs.detect.outputs.services != ''
+    if: ${{ needs.detect.outputs.services != '[]' }}
     strategy:
-      matrix:
-        service: ${{ fromJSON(format('["{0}"]', join('","', split(needs.detect.outputs.services, ' ')))) }}
-      max-parallel: 3
+        matrix:
+          service: ${{ fromJSON(needs.detect.outputs.services) }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+        - uses: actions/checkout@v4
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
+        - name: Set up JDK 17
+          uses: actions/setup-java@v4
+          with:
+            distribution: temurin
+            java-version: 17
+            cache: maven
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+        - name: Install shared parent pom
+          run: |
+            echo "Installing shared parent pom.xml..."
+            mvn -f app/pom.xml clean install -DskipTests
 
-      - name: Build & Test ${{ matrix.service }}
-        run: |
-          echo "🚀 Building and testing ${{ matrix.service }}"
-          cd ${{ matrix.service }}
-          mvn clean verify -B
+        - name: Build and test changed service
+          run: |
+            cd ${{ matrix.service }}
+            mvn clean verify -B
 
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.service }}-test-results
-          path: ${{ matrix.service }}/target/surefire-reports/
+        - name: Upload Test Results
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: ${{ matrix.service }}-test-results
+            path: ${{ matrix.service }}/target/surefire-reports/
 

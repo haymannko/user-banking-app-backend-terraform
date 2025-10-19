@@ -17,40 +17,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Detect changed or new services
         id: detect
-        shell: bash
         run: |
-          echo "🔍 Detecting changed or new services under /app..."
-
-          # Find all subfolders inside /app that contain a pom.xml
-          all_services=$(find app -mindepth 1 -maxdepth 1 -type d -exec test -f "{}/pom.xml" ';' -print)
-          echo "All detected services: $all_services"
-
-          # Get base commit (previous commit)
-          base_commit=$(git rev-parse HEAD~1)
-          echo "Base commit: $base_commit"
-
-          # Detect changed files
-          changed_files=$(git diff --name-only $base_commit HEAD)
-          echo "Changed files: $changed_files"
-
-          changed_services=""
-          for service in $all_services; do
-            if echo "$changed_files" | grep -q "^${service}/"; then
-              changed_services="$changed_services $service"
-            fi
-          done
-
-          # Detect newly added services
-          new_services=$(git diff --name-only --diff-filter=A $base_commit HEAD | grep "pom.xml" | grep "^app/" | xargs -r dirname)
-          for ns in $new_services; do
-            if [[ ! "$changed_services" =~ "$ns" ]]; then
-              changed_services="$changed_services $ns"
-            fi
-          done
-
-          changed_services=$(echo "$changed_services" | tr ' ' '\n' | sort -u | tr '\n' ' ' | xargs)
-          echo "✅ Changed or new services: $changed_services"
-          echo "services=${changed_services}" >> $GITHUB_OUTPUT
+                changed=$(git diff --name-only HEAD~1 HEAD | grep '^app/' | cut -d'/' -f2 | sort -u | sed 's|^|app/|' || true)
+                if [ -z "$changed" ]; then
+                  echo "No changed services detected."
+                  echo "services=[]" >> $GITHUB_OUTPUT
+                else
+                  echo "Detected changed services:"
+                  echo "$changed"
+                  json=$(printf '%s\n' "$changed" | jq -R . | jq -s .)
+                  echo "services=$json" >> $GITHUB_OUTPUT
+                fi

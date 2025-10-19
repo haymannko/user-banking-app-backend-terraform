@@ -11,10 +11,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>personal-transaction-service</artifactId>
+    <artifactId>scanPayment-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Personal Transaction Service</name>
-    <description>Service for Personal Transactions</description>
+    <name>GetscanPayment</name>
+    <description>Get Scan Payment</description>
 
     <properties>
         <java.version>17</java.version>

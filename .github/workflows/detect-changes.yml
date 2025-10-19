@@ -17,16 +17,26 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Detect changed or new services
+      - name: Detect changed services
         id: detect
         run: |
-                changed=$(git diff --name-only HEAD~1 HEAD | grep '^app/' | cut -d'/' -f2 | sort -u | sed 's|^|app/|' || true)
-                if [ -z "$changed" ]; then
-                  echo "No changed services detected."
-                  echo "services=[]" >> $GITHUB_OUTPUT
-                else
-                  echo "Detected changed services:"
-                  echo "$changed"
-                  json=$(printf '%s\n' "$changed" | jq -R . | jq -s .)
-                  echo "services=$json" >> $GITHUB_OUTPUT
-                fi
+          echo "Detecting changed modules..."
+          # Find all changed files under app/
+          changed=$(git diff --name-only HEAD~1 HEAD | grep '^app/' || true)
+
+          # Extract unique service directories (2nd-level only)
+          services=$(echo "$changed" | awk -F/ '{if (NF>2) print "app/"$2}' | sort -u || true)
+
+          # If nothing changed
+          if [ -z "$services" ]; then
+            echo "No changed services detected."
+            echo "services=[]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Detected changed services:"
+          echo "$services"
+
+          # Convert list to valid JSON array
+          json=$(printf '%s\n' "$services" | jq -R . | jq -s .)
+          echo "services=$json" >> $GITHUB_OUTPUT

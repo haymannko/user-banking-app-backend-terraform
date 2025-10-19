@@ -15,6 +15,7 @@
         <module>nickname-service</module>
         <module>personal-transaction-service</module>
         <module>personal-user-service</module>
+        <module>scanPayment-service</module>
     </modules>
 
     <parent>
@@ -47,7 +48,6 @@
     <build>
         <pluginManagement>
             <plugins>
-
                 <!-- Compiler Plugin -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

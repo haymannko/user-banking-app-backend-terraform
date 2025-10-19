@@ -1,6 +1,7 @@
 package dto;
 
 public record ScanData(
-        String secretes
+        String secretes,
+        Long userId
 ) {
 }

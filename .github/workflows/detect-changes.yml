@@ -21,13 +21,10 @@ jobs:
         id: detect
         run: |
           echo "Detecting changed modules..."
-          # Find all changed files under app/
           changed=$(git diff --name-only HEAD~1 HEAD | grep '^app/' || true)
 
-          # Extract unique service directories (2nd-level only)
           services=$(echo "$changed" | awk -F/ '{if (NF>2) print "app/"$2}' | sort -u || true)
 
-          # If nothing changed
           if [ -z "$services" ]; then
             echo "No changed services detected."
             echo "services=[]" >> $GITHUB_OUTPUT
@@ -37,6 +34,6 @@ jobs:
           echo "Detected changed services:"
           echo "$services"
 
-          # Convert list to valid JSON array
-          json=$(printf '%s\n' "$services" | jq -R . | jq -s .)
+          # Convert to single-line JSON
+          json=$(printf '%s\n' "$services" | jq -R . | jq -s -c .)
           echo "services=$json" >> $GITHUB_OUTPUT

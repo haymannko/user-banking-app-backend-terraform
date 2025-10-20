@@ -1,4 +1,4 @@
-name: Dynamic Multi-Service CI
+name: Smart CI for Dynamic Maven Services
 
 on:
   push:
@@ -11,83 +11,81 @@ on:
       - main
 
 jobs:
-  detect-and-build:
+  build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./app
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # needed to detect file diffs
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: maven
 
-      - name: Detect new or changed services
+      - name: Detect changed or new services
         id: detect
         run: |
-          echo "Detecting new or changed services..."
+          echo "🔍 Detecting changed or new services..."
 
           git fetch origin --quiet
 
-          # Find all service directories dynamically (with pom.xml)
-          ALL_SERVICES=$(find . -mindepth 2 -maxdepth 2 -type f -name "pom.xml" | grep -oE "[^/]+/pom.xml" | cut -d'/' -f1 | sort -u)
+          # Move into root/app directory to detect services
+          cd app
 
-          echo "All detected services:"
+          # Get all services dynamically (those containing pom.xml)
+          ALL_SERVICES=$(find . -maxdepth 2 -type f -name "pom.xml" | cut -d'/' -f2 | sort -u)
+
+          echo "✅ All detected services:"
           echo "$ALL_SERVICES"
 
-          # Determine if we're on feature or dev branch
           CURRENT_BRANCH=${GITHUB_REF##*/}
+          BASE_BRANCH="origin/dev"
 
-          # For ft/* and dev → only detect changed/new services
           if [[ "$CURRENT_BRANCH" == ft/* || "$CURRENT_BRANCH" == "dev" ]]; then
-            BASE_BRANCH="origin/dev"
             if ! git rev-parse --verify $BASE_BRANCH >/dev/null 2>&1; then
               BASE_BRANCH=$(git rev-list --max-parents=0 HEAD)
             fi
 
-            # Detect changes under /app/
+            # Detect files changed under /app/
             CHANGED_PATHS=$(git diff --name-only $BASE_BRANCH...HEAD | grep '^app/' || true)
-            CHANGED_SERVICES=$(echo "$CHANGED_PATHS" | grep -Eo 'app/[^/]+/' | sort -u | cut -d'/' -f2 || true)
+            CHANGED_SERVICES=$(echo "$CHANGED_PATHS" | grep -Eo '^app/[^/]+' | cut -d'/' -f2 | sort -u || true)
 
-            # Detect newly added services (not in base branch)
-            NEW_SERVICES=$(comm -13 <(git ls-tree -d --name-only $BASE_BRANCH app | sort) <(ls app | sort) || true)
+            # Detect new folders (added services)
+            BASE_SERVICES=$(git ls-tree -d --name-only $BASE_BRANCH app 2>/dev/null || true)
+            CURRENT_SERVICES=$(ls -1 .)
+            NEW_SERVICES=$(comm -13 <(echo "$BASE_SERVICES" | sort) <(echo "$CURRENT_SERVICES" | sort) || true)
 
-            # Combine both changed and new
             MODULES=$(echo -e "$CHANGED_SERVICES\n$NEW_SERVICES" | sort -u | tr '\n' ' ' | xargs || true)
 
             if [ -z "$MODULES" ]; then
-              echo "No changed or new services detected — skipping."
+              echo "⚠️ No changed or new services detected."
               echo "modules=" >> $GITHUB_OUTPUT
             else
-              echo "Changed or new services: $MODULES"
+              echo "✅ Changed or new services: $MODULES"
               echo "modules=$MODULES" >> $GITHUB_OUTPUT
             fi
-
           else
-            # For PRs (ft/* → dev or dev → main): build everything
-            echo "Pull request to dev/main — building all services."
+            echo "🧩 PR to dev/main → build all services."
             echo "modules=$(echo $ALL_SERVICES | tr '\n' ' ')" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and Test Changed/New Services
         if: steps.detect.outputs.modules != ''
         run: |
-          echo "Building and testing modules: ${{ steps.detect.outputs.modules }}"
+          echo "🚀 Building changed/new services: ${{ steps.detect.outputs.modules }}"
+          cd app
           for module in ${{ steps.detect.outputs.modules }}; do
             echo "🔧 Building $module..."
             mvn -f $module/pom.xml clean verify -B
           done
 
-      - name: Fallback - Build All (no modules detected)
+      - name: Full Build (no detected modules)
         if: steps.detect.outputs.modules == ''
         run: |
-          echo "No specific modules detected. Running full build..."
-          mvn -f pom.xml clean verify -B
+          echo "🧱 Running full build..."
+          mvn -f app/pom.xml clean verify -B

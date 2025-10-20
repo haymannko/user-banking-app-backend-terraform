@@ -27,42 +27,44 @@ jobs:
         id: branch-ref
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            # Compare head with base for PRs
-            echo "BASE=origin/${{ github.base_ref }}" >> $GITHUB_OUTPUT
-            echo "HEAD=origin/${{ github.head_ref }}" >> $GITHUB_OUTPUT
+            # Use fetch_head for PRs as it references the merge base
+            echo "BASE=HEAD^1" >> $GITHUB_OUTPUT
+            echo "HEAD=HEAD" >> $GITHUB_OUTPUT
           else
-            # For pushes, get all commits since the common ancestor with the base branch
-            echo "BASE=origin/${{ github.base_ref }}" >> $GITHUB_OUTPUT
+            # For pushes, get all commits since the last push to the default branch
+            echo "BASE=origin/${{ github.event.repository.default_branch }}" >> $GITHUB_OUTPUT
             echo "HEAD=HEAD" >> $GITHUB_OUTPUT
           fi
 
       - name: Detect changed services
         id: detect
         run: |
-          echo "Detecting changed modules..."
-          changed_files=$(git diff --name-only ${{ steps.branch-ref.outputs.BASE }}...${{ steps.branch-ref.outputs.HEAD }} || true)
-
-          # Check for changes in core files that require a full build
-          if echo "$changed_files" | grep -E 'pom.xml|.proto'; then
+          echo "Determining changed modules based on diff between ${{ steps.branch-ref.outputs.BASE }} and ${{ steps.branch-ref.outputs.HEAD }}"
+          
+          # Detect changes to core files that affect the entire build
+          core_files_changed=$(git diff --name-only ${{ steps.branch-ref.outputs.BASE }}...${{ steps.branch-ref.outputs.HEAD }} | grep -E 'pom.xml|.proto')
+          if [[ ! -z "$core_files_changed" ]]; then
+            echo "::notice::Core files (pom.xml or .proto) were changed. Triggering a full build."
             echo "services=[]" >> $GITHUB_OUTPUT
             echo "full_build=true" >> $GITHUB_OUTPUT
-            echo "Detected change in core file (pom.xml or .proto). Triggering full build."
             exit 0
           fi
 
-          services=$(echo "$changed_files" | awk -F/ '{if (NF>2 && $1=="app") print "app/"$2}' | sort -u || true)
+          # Detect changed service modules under /app
+          changed_services=$(git diff --name-only ${{ steps.branch-ref.outputs.BASE }}...${{ steps.branch-ref.outputs.HEAD }} | awk -F'/' '{if ($1=="app" && $2!="") print "app/"$2}' | sort -u || true)
 
-          if [ -z "$services" ]; then
-            echo "No changed services detected."
+          if [ -z "$changed_services" ]; then
+            echo "::notice::No changed services detected. Skipping."
             echo "services=[]" >> $GITHUB_OUTPUT
             echo "full_build=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          echo "Detected changed services:"
-          echo "$services"
+          echo "::notice::Detected changed services:"
+          echo "$changed_services"
           
-          # Convert to single-line JSON
-          json=$(printf '%s\n' "$services" | jq -R . | jq -s -c .)
-          echo "services=$json" >> $GITHUB_OUTPUT
+          # Convert to single-line JSON array for output
+          json_output=$(printf '%s\n' "$changed_services" | jq -R . | jq -s -c .)
+          echo "services=$json_output" >> $GITHUB_OUTPUT
           echo "full_build=false" >> $GITHUB_OUTPUT
+

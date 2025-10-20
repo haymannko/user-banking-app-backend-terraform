@@ -79,13 +79,17 @@ jobs:
         run: |
           echo "Building modules:"
           echo "${{ steps.detect.outputs.modules }}"
+
           cd app
-          for module in ${{ steps.detect.outputs.modules }}; do
-            if [ -f "$module/pom.xml" ]; then
+
+          # Safely read multi-line output into an array
+          echo "${{ steps.detect.outputs.modules }}" | while IFS= read -r module; do
+            module=$(echo "$module" | xargs) # trim spaces
+            if [ -n "$module" ] && [ -f "$module/pom.xml" ]; then
               echo "🔧 Building $module..."
               mvn -f "$module/pom.xml" clean verify -B
             else
-              echo "⚠️ Skipping $module (no pom.xml found)"
+              echo "⚠️ Skipping $module (no pom.xml found or empty name)"
             fi
           done
 

@@ -12,3 +12,5 @@ public class AppConfig {
         return new RestTemplate();
     }
 }
+
+// git config for the servce

@@ -1,4 +1,4 @@
-name: Smart CI for Dynamic Maven Services
+name: Smart CI for Dynamic Maven Modules
 
 on:
   push:
@@ -15,77 +15,72 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: 🧩 Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 21
+      - name: ☕ Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 17
           cache: maven
 
-      - name: Detect changed or new services
+      - name: 🔍 Detect changed or new services
         id: detect
         run: |
-          echo "🔍 Detecting changed or new services..."
-
+          echo "Detecting changed or new services..."
           git fetch origin --quiet
 
-          # Move into root/app directory to detect services
-          cd app
-
-          # Get all services dynamically (those containing pom.xml)
-          ALL_SERVICES=$(find . -maxdepth 2 -type f -name "pom.xml" | cut -d'/' -f2 | sort -u)
-
-          echo "✅ All detected services:"
-          echo "$ALL_SERVICES"
-
-          CURRENT_BRANCH=${GITHUB_REF##*/}
           BASE_BRANCH="origin/dev"
+          CURRENT_BRANCH=${GITHUB_REF##*/}
+
+          # Detect all existing modules (those having pom.xml)
+          EXISTING_MODULES=$(find app -mindepth 1 -maxdepth 1 -type d -exec test -f "{}/pom.xml" ';' -print | xargs -n1 basename)
+          echo "✅ Existing modules: $EXISTING_MODULES"
 
           if [[ "$CURRENT_BRANCH" == ft/* || "$CURRENT_BRANCH" == "dev" ]]; then
             if ! git rev-parse --verify $BASE_BRANCH >/dev/null 2>&1; then
               BASE_BRANCH=$(git rev-list --max-parents=0 HEAD)
             fi
 
-            # Detect files changed under /app/
             CHANGED_PATHS=$(git diff --name-only $BASE_BRANCH...HEAD | grep '^app/' || true)
             CHANGED_SERVICES=$(echo "$CHANGED_PATHS" | grep -Eo '^app/[^/]+' | cut -d'/' -f2 | sort -u || true)
 
-            # Detect new folders (added services)
             BASE_SERVICES=$(git ls-tree -d --name-only $BASE_BRANCH app 2>/dev/null || true)
-            CURRENT_SERVICES=$(ls -1 .)
-            NEW_SERVICES=$(comm -13 <(echo "$BASE_SERVICES" | sort) <(echo "$CURRENT_SERVICES" | sort) || true)
+            NEW_SERVICES=$(comm -13 <(echo "$BASE_SERVICES" | sort) <(echo "$EXISTING_MODULES" | sort) || true)
 
-            MODULES=$(echo -e "$CHANGED_SERVICES\n$NEW_SERVICES" | sort -u | tr '\n' ' ' | xargs || true)
+            MODULES=$(echo -e "$CHANGED_SERVICES\n$NEW_SERVICES" | sort -u | grep -Fx -f <(echo "$EXISTING_MODULES") || true)
 
             if [ -z "$MODULES" ]; then
-              echo "⚠️ No changed or new services detected."
+              echo "⚠️ No changed or new modules detected."
               echo "modules=" >> $GITHUB_OUTPUT
             else
-              echo "✅ Changed or new services: $MODULES"
+              echo "✅ Changed or new modules: $MODULES"
               echo "modules=$MODULES" >> $GITHUB_OUTPUT
             fi
           else
-            echo "🧩 PR to dev/main → build all services."
-            echo "modules=$(echo $ALL_SERVICES | tr '\n' ' ')" >> $GITHUB_OUTPUT
+            echo "🧩 Pull request detected → build all modules."
+            echo "modules=$EXISTING_MODULES" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build and Test Changed/New Services
+      - name: 🚀 Build and Test Changed/New Modules
         if: steps.detect.outputs.modules != ''
         run: |
-          echo "🚀 Building changed/new services: ${{ steps.detect.outputs.modules }}"
+          echo "Building modules: ${{ steps.detect.outputs.modules }}"
           cd app
           for module in ${{ steps.detect.outputs.modules }}; do
-            echo "🔧 Building $module..."
-            mvn -f $module/pom.xml clean verify -B
+            if [ -f "$module/pom.xml" ]; then
+              echo "🔧 Building $module..."
+              mvn -f "$module/pom.xml" clean verify -B
+            else
+              echo "⚠️ Skipping $module (no pom.xml found)"
+            fi
           done
 
-      - name: Full Build (no detected modules)
+      - name: 🧱 Full Build (no detected modules)
         if: steps.detect.outputs.modules == ''
         run: |
-          echo "🧱 Running full build..."
+          echo "Running full build..."
           mvn -f app/pom.xml clean verify -B

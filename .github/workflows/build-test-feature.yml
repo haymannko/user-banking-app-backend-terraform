@@ -26,7 +26,6 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: maven
-
       - name: 🔍 Detect changed or new services
         id: detect
         run: |
@@ -36,40 +35,40 @@ jobs:
           BASE_BRANCH="origin/dev"
           CURRENT_BRANCH=${GITHUB_REF##*/}
 
-          # Detect all existing Maven modules under app/
+          # Ensure we have something to diff against
+          if ! git rev-parse --verify $BASE_BRANCH >/dev/null 2>&1; then
+            BASE_BRANCH=$(git rev-list --max-parents=0 HEAD)
+          fi
+
+          # List existing modules (services) with pom.xml
           EXISTING_MODULES=$(find app -mindepth 1 -maxdepth 1 -type d -exec test -f "{}/pom.xml" ';' -print | xargs -n1 basename)
-          echo "✅ Existing modules: $EXISTING_MODULES"
+          echo "✅ Existing modules:"
+          echo "$EXISTING_MODULES"
 
-          if [[ "$CURRENT_BRANCH" == ft/* || "$CURRENT_BRANCH" == "dev" ]]; then
-            if ! git rev-parse --verify $BASE_BRANCH >/dev/null 2>&1; then
-              BASE_BRANCH=$(git rev-list --max-parents=0 HEAD)
-            fi
+          # Detect changed paths under app/
+          CHANGED_PATHS=$(git diff --name-only $BASE_BRANCH...HEAD -- 'app/*' || true)
+          echo "🔍 Raw changed paths:"
+          echo "$CHANGED_PATHS"
 
-            CHANGED_PATHS=$(git diff --name-only $BASE_BRANCH...HEAD | grep '^app/' || true)
-            CHANGED_SERVICES=$(echo "$CHANGED_PATHS" | grep -Eo '^app/[^/]+' | cut -d'/' -f2 | sort -u || true)
+          # Filter only changed services (directories with pom.xml)
+          CHANGED_SERVICES=$(echo "$CHANGED_PATHS" | grep -Eo '^app/[^/]+' | cut -d'/' -f2 | sort -u || true)
 
-            BASE_SERVICES=$(git ls-tree -d --name-only $BASE_BRANCH app 2>/dev/null || true)
-            NEW_SERVICES=$(comm -13 <(echo "$BASE_SERVICES" | sort) <(echo "$EXISTING_MODULES" | sort) || true)
+          # Detect new services (added directories that didn’t exist in base)
+          BASE_SERVICES=$(git ls-tree -d --name-only $BASE_BRANCH app 2>/dev/null | xargs -n1 basename || true)
+          NEW_SERVICES=$(comm -13 <(echo "$BASE_SERVICES" | sort) <(echo "$EXISTING_MODULES" | sort) || true)
 
-            MODULES=$(echo -e "$CHANGED_SERVICES\n$NEW_SERVICES" | sort -u | grep -Fx -f <(echo "$EXISTING_MODULES") || true)
+          # Combine changed + new modules
+          MODULES=$(echo -e "$CHANGED_SERVICES\n$NEW_SERVICES" | sort -u | grep -Fx -f <(echo "$EXISTING_MODULES") || true)
 
-            if [ -z "$MODULES" ]; then
-              echo "⚠️ No changed or new modules detected."
-              echo "modules=" >> $GITHUB_OUTPUT
-            else
-              echo "✅ Changed or new modules:"
-              echo "$MODULES"
-              {
-                echo "modules<<EOF"
-                echo "$MODULES"
-                echo "EOF"
-              } >> $GITHUB_OUTPUT
-            fi
+          if [ -z "$MODULES" ]; then
+            echo "⚠️ No changed or new modules detected."
+            echo "modules=" >> $GITHUB_OUTPUT
           else
-            echo "🧩 Pull request detected → build all modules."
+            echo "✅ Changed or new modules:"
+            echo "$MODULES"
             {
               echo "modules<<EOF"
-              echo "$EXISTING_MODULES"
+              echo "$MODULES"
               echo "EOF"
             } >> $GITHUB_OUTPUT
           fi

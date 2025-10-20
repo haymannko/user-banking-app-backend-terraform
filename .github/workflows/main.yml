@@ -52,7 +52,7 @@ jobs:
   call-maven-build:
     needs: generate-build-matrix
     if: fromJson(needs.generate-build-matrix.outputs.services) != '[]'
-    uses: ./.github/workflows/maven-build.yml
+    uses: ./.github/workflows/build-test-feature.yml
     with:
       services: ${{ needs.generate-build-matrix.outputs.services }}
       full_build_required: ${{ needs.generate-build-matrix.outputs.full_build }}

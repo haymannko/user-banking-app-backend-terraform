@@ -13,4 +13,3 @@ public class AppConfig {
     }
 }
 
-// git config for the servce

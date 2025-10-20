@@ -1,13 +1,13 @@
-package com.corporatebanking.scanpaymentservice;
+package com.corporatebanking.scan_payment;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ScanPaymentServiceApplication {
+public class ScanPaymentApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ScanPaymentServiceApplication.class, args);
+        SpringApplication.run(ScanPaymentApplication.class, args);
     }
 
 }

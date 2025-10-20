@@ -36,7 +36,7 @@ jobs:
           BASE_BRANCH="origin/dev"
           CURRENT_BRANCH=${GITHUB_REF##*/}
 
-          # Detect all existing modules (those having pom.xml)
+          # Detect all existing Maven modules under app/
           EXISTING_MODULES=$(find app -mindepth 1 -maxdepth 1 -type d -exec test -f "{}/pom.xml" ';' -print | xargs -n1 basename)
           echo "✅ Existing modules: $EXISTING_MODULES"
 
@@ -57,18 +57,28 @@ jobs:
               echo "⚠️ No changed or new modules detected."
               echo "modules=" >> $GITHUB_OUTPUT
             else
-              echo "✅ Changed or new modules: $MODULES"
-              echo "modules=$MODULES" >> $GITHUB_OUTPUT
+              echo "✅ Changed or new modules:"
+              echo "$MODULES"
+              {
+                echo "modules<<EOF"
+                echo "$MODULES"
+                echo "EOF"
+              } >> $GITHUB_OUTPUT
             fi
           else
             echo "🧩 Pull request detected → build all modules."
-            echo "modules=$EXISTING_MODULES" >> $GITHUB_OUTPUT
+            {
+              echo "modules<<EOF"
+              echo "$EXISTING_MODULES"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
           fi
 
       - name: 🚀 Build and Test Changed/New Modules
         if: steps.detect.outputs.modules != ''
         run: |
-          echo "Building modules: ${{ steps.detect.outputs.modules }}"
+          echo "Building modules:"
+          echo "${{ steps.detect.outputs.modules }}"
           cd app
           for module in ${{ steps.detect.outputs.modules }}; do
             if [ -f "$module/pom.xml" ]; then

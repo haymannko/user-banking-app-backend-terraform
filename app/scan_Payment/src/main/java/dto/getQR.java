@@ -2,6 +2,7 @@ package dto;
 
 public record getQR(
         String qrCode,
-        String accountId
+        String accountId,
+        long timestamp
 ) {
 }

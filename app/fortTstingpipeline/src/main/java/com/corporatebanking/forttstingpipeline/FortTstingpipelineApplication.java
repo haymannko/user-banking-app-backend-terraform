@@ -1,0 +1,13 @@
+package com.corporatebanking.forttstingpipeline;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class FortTstingpipelineApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(FortTstingpipelineApplication.class, args);
+    }
+
+}

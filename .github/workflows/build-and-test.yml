@@ -1,0 +1,31 @@
+name: Build and Test Microservices
+
+on:
+  workflow_call:
+    inputs:
+      changed-services:
+        description: "Comma separated list of services to test"
+        required: true
+        type: string
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(inputs.services) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build & Test Service
+        working-directory: app/${{ matrix.service }}
+        run: mvn -B clean verify

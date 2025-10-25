@@ -1,0 +1,44 @@
+name: Corporate Banking CI/CD
+
+on:
+  push:
+    branches:
+      - 'ft/*'
+  pull_request:
+    branches:
+      - dev
+      - main
+      - ft/*
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  detect:
+    uses: ./.github/workflows/detect-changes.yml
+
+  build-test-changed:
+    if: startsWith(github.ref, 'refs/heads/ft/')
+    needs: detect
+    uses: ./.github/workflows/build-and-test.yml
+    with:
+      changed-services: ${{ needs.detect.outputs.changed-services }}
+
+  build-test-all-on-dev:
+    if: github.event_name == 'pull_request' && github.base_ref == 'dev'
+    uses: ./.github/workflows/build-and-test.yml
+    with:
+      changed-services: ${{ 'account-service,payment-service,gateway-service' }}
+
+  release:
+    if: github.event_name == 'pull_request_target' && github.event.pull_request.merged == true && github.base_ref == 'main'
+    needs: detect
+    uses: ./.github/workflows/docker-release.yml
+    with:
+      changed-services: ${{ needs.detect.outputs.changed-services }}
+      tag: ${{ github.sha }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

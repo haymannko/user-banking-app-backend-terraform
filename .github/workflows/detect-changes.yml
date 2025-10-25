@@ -57,6 +57,17 @@ jobs:
       - name: Output result
         id: set-output
         run: |
-          CHANGED_JSON=$(printf '%s' "$CHANGED" | jq -R 'split(",")')
-          echo "services=$CHANGED_JSON" >> $GITHUB_OUTPUT
-          echo "Services to build: $SERVICES"
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
+           | grep '^app/' | cut -d/ -f2 | sort -u)
+  
+          if [ -z "$CHANGED" ]; then
+           echo "No changed services detected. Skipping."
+            echo "services=[]" >> $GITHUB_OUTPUT
+          exit 0
+          fi
+  
+            CHANGED_JSON=$(printf '%s\n' "$CHANGED" | jq -sR 'split("\n")[:-1]')
+            echo "Changed services: $CHANGED_JSON"
+  
+            echo "services=$CHANGED_JSON" >> $GITHUB_OUTPUT
+

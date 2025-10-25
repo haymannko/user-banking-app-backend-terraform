@@ -29,7 +29,7 @@ services:
       - "5433:5432"
     volumes:
       - personal_postgres_data:/var/lib/postgresql/data
-#      - ./personal-schema.sql:/docker-entrypoint-initdb.d/personal-schema.sql
+      - ./db:/docker-entrypoint-initdb.d
 
   nickname-service:
     build: ../nickname-service

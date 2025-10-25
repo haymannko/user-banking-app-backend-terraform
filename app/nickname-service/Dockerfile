@@ -1,7 +1,17 @@
-FROM maven:3.8.7-eclipse-temurin-17 as build
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+
+WORKDIR /app
+COPY . .
+
+# Build whole project so parent POM is installed
+RUN mvn -B clean install -DskipTests
+
+# Ensure Maven installed the parent properly
+RUN ls -R /root/.m2/repository/com/corporatebanking
 
 FROM eclipse-temurin:17-jre
+WORKDIR /app
 
-COPY ./target/nickname-service-0.0.1-SNAPSHOT.jar app.jar
-EXPOSE 3001 9092
-ENTRYPOINT ["java","-jar","app.jar"]
+COPY --from=build /app/app/gateway-service/target/*.jar app.jar
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

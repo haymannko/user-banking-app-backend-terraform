@@ -12,9 +12,9 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>gateway-service</artifactId>
-    <name>Gateway Service</name>
-    <description>API Gateway for Corporate Banking Microservices</description>
+    <artifactId>scanToPay</artifactId>
+    <name>scanToPay</name>
+    <description>Scan to Pay Service</description>
 
     <dependencies>
         <!-- Spring Boot Web -->
@@ -55,11 +55,21 @@
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
         </dependency>
+        <!-- Junit 5  (version managed by parent) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Spring Boot Plugin (inherited from parent) -->
+            <!-- ✅ Spring Boot Plugin: generate executable JAR -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -73,11 +83,12 @@
                 </executions>
             </plugin>
 
-            <!-- Protobuf Plugin (inherited from parent, only need to declare it) -->
+            <!-- Protobuf Plugin (keep as inherited if configured in parent) -->
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
             </plugin>
+
         </plugins>
     </build>
 

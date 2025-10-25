@@ -1,9 +1,9 @@
-FROM maven:3.8.7-eclipse-temurin-17 as build
-
-COPY src/main/proto ./src/main/proto
-
 FROM eclipse-temurin:17-jre
+WORKDIR /app
 
-COPY ./target/personal-user-service-0.0.1-SNAPSHOT.jar personal-user-app.jar
+# Copy pre-built JAR
+COPY target/personal-user-service-0.0.1-SNAPSHOT.jar app.jar
+
 EXPOSE 3501 7094
-ENTRYPOINT ["java","-jar","app.jar"]
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

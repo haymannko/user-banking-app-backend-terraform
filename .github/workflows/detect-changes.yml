@@ -54,21 +54,5 @@ jobs:
           fi
           echo "SERVICES=$MERGED" >> $GITHUB_ENV
 
-      - name: Output result
-        id: set-output
-        run: |
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-           | grep '^app/' | cut -d/ -f2 | sort -u)
-  
-          if [ -z "$CHANGED" ]; then
-          echo "No services changed."
-          echo "services=[]" >> $GITHUB_OUTPUT
-          exit 0
-          fi
-  
-          CHANGED_JSON=$(printf '%s\n' "$CHANGED" | jq -sR 'split("\n")[:-1]' | jq -c .)
-
-          echo "Changed services: $CHANGED_JSON"
-          echo "services=$CHANGED_JSON" >> $GITHUB_OUTPUT
-
+      
 

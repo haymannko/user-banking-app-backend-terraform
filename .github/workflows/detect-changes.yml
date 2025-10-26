@@ -8,67 +8,39 @@ on:
         value: ${{ jobs.detect.outputs.changed-services }}
 
 jobs:
-  detect:
+  detect-services:
     runs-on: ubuntu-latest
     outputs:
-      changed-services: ${{ steps.set-output.outputs.services }}
-
+      services: ${{ steps.set.outputs.services }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # full history required
+      - uses: actions/checkout@v4
 
-      - name: Determine changed services
-        id: detect
+      - name: Collect changed + new services
+        id: collect
         run: |
-          # Detect changes under app/
+          # Detect changed services under app/
           CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-            | grep '^app/' \
+            | grep '^app/' || true \
             | cut -d/ -f2 \
-            | sort -u \
-            | tr '\n' ',' \
-            | sed 's/,$//')
+            | sort -u)
 
-          echo "CHANGED=$CHANGED" >> $GITHUB_ENV
+          # All services under app/
+          ALL=$(find app -maxdepth 1 -type d -not -path 'app' | cut -d/ -f2 | sort -u)
 
-      - name: Detect newly added services (directories)
-        id: detect-new
-        run: |
-          # All directories under app/
-          ALL_SERVICES=$(find app -maxdepth 1 -type d -not -path 'app' | cut -d/ -f2 | tr '\n' ',' | sed 's/,$//')
-          echo "ALL_SERVICES=$ALL_SERVICES" >> $GITHUB_ENV
+          # Merge and unique
+          MERGED=$(printf '%s\n%s\n' "$CHANGED" "$ALL" | sort -u | grep -v '^$' || true)
 
-      - name: Merge changed and new services
-        id: merge
-        run: |
-          MERGED=$(echo "${CHANGED},${ALL_SERVICES}" | tr ',' '\n' | sort -u | tr '\n' ',' | sed 's/,$//')
-          echo "MERGED=$MERGED" >> $GITHUB_ENV
-
-      - name: Fallback if empty
-        id: fallback
-        run: |
           if [ -z "$MERGED" ]; then
-            echo "⚠️ No diff detected — scanning all services!"
-            MERGED=$ALL_SERVICES
+            echo "⚠️ No services found — failing"
+            exit 1
           fi
-          echo "SERVICES=$MERGED" >> $GITHUB_ENV
 
-      - name: Output result
-        id: set-output
+          printf '%s\n' "$MERGED" > merged.txt
+
+      - name: Convert to JSON
+        id: set
         run: |
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-           | grep '^app/' | cut -d/ -f2 | sort -u)
-  
-          if [ -z "$CHANGED" ]; then
-          echo "No services changed."
-          echo "services=[]" >> $GITHUB_OUTPUT
-          exit 0
-          fi
-  
-          CHANGED_JSON=$(printf '%s\n' "$CHANGED" | jq -sR 'split("\n")[:-1]' | jq -c .)
-
-          echo "Changed services: $CHANGED_JSON"
-          echo "services=$CHANGED_JSON" >> $GITHUB_OUTPUT
-
+          JSON=$(jq -R . < merged.txt | jq -s .)
+          echo "✅ SERVICES: $JSON"
+          echo "services=$JSON" >> $GITHUB_OUTPUT
 

@@ -3,7 +3,8 @@ package com.personalbanking.qrtopay.dto;
 public record QRDto(
         String name,
         Long AccountId,
-        String userName
+        String userName,
+        Double amount
 
         // add new more code
 ) {

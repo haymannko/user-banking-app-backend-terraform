@@ -1,4 +1,7 @@
 package com.personalbanking.qrtopay.dto;
 
-public record QRDto() {
+public record QRDto(
+        String name,
+        Long AccountId
+) {
 }

@@ -54,5 +54,20 @@ jobs:
           fi
           echo "SERVICES=$MERGED" >> $GITHUB_ENV
 
+      - name: Output result (JSON format)
+        id: set-output
+        run: |
+          if [ -z "$SERVICES" ]; then
+            echo "No services changed. Returning empty array."
+            echo 'services=[]' >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Convert comma-separated string into JSON array
+          JSON=$(echo "$SERVICES" | tr ',' '\n' | jq -R . | jq -cs .)
+          echo "Services JSON: $JSON"
+          echo "services=$JSON" >> $GITHUB_OUTPUT
+      
+
       
 

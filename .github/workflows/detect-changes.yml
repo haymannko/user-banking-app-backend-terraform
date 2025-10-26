@@ -4,7 +4,7 @@ on:
   workflow_call:
     outputs:
       changed-services:
-        description: "List of services changed or newly added"
+        description: "List of services changed or newly added (excluding infra)"
         value: ${{ jobs.detect.outputs.changed-services }}
 
 jobs:
@@ -17,35 +17,40 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # full history needed
 
-      - name: Detect changed services
+      - name: Determine changed services
         id: detect
         run: |
+          # Detect changes under app/, exclude infra
           CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-            | grep '^app/' | cut -d/ -f2 | grep -v '^infra$' | sort -u)
+            | grep '^app/' \
+            | cut -d/ -f2 \
+            | grep -v '^infra$' \
+            | sort -u)
           echo "CHANGED=$CHANGED"
 
-      - name: Detect newly added services
+      - name: Detect newly added services (directories)
         id: detect-new
         run: |
-          ALL_SERVICES=$(find app -maxdepth 1 -type d -not -path 'app' -not -name 'infra' | cut -d/ -f2)
+          ALL_SERVICES=$(find app -maxdepth 1 -mindepth 1 -type d | cut -d/ -f2 | grep -v '^infra$' | sort -u)
           echo "ALL_SERVICES=$ALL_SERVICES"
 
-      - name: Merge changed + new services
+      - name: Merge changed and new services
         id: merge
         run: |
-          MERGED=$(echo -e "$CHANGED\n$ALL_SERVICES" | sort -u)
+          MERGED=$(echo -e "$CHANGED\n$ALL_SERVICES" | grep -v '^$' | sort -u)
           if [ -z "$MERGED" ]; then
-            echo "⚠️ No changes detected, defaulting to ALL_SERVICES"
+            echo "⚠️ No changes detected — using all services"
             MERGED=$ALL_SERVICES
           fi
-          # convert to JSON array
+          # Convert to JSON array
           MERGED_JSON=$(printf '%s\n' $MERGED | jq -R . | jq -s .)
-          echo "SERVICES=$MERGED_JSON" >> $GITHUB_OUTPUT
-          echo "Merged services JSON: $MERGED_JSON"
+          echo "SERVICES=$MERGED_JSON"
+          echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT
 
       - name: Set output
         id: set-output
         run: |
+          # Re-use MERGED_JSON from previous step
           echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT

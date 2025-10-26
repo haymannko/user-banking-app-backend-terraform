@@ -13,10 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJson(needs.detect-services.outputs.services) }}
+        service: ${{ fromJson(inputs.changed-services || '[]') }}
 
     steps:
-      - run: echo "Building ${{ matrix.service }} ✅"
       - name: Checkout code
         uses: actions/checkout@v3
 

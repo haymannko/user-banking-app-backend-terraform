@@ -6,7 +6,6 @@ on:
       changed-services:
         description: "List of services changed or newly added (excluding infra)"
         value: ${{ jobs.detect.outputs.changed-services }}
-
 jobs:
   detect:
     runs-on: ubuntu-latest
@@ -17,7 +16,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # full history needed
+          fetch-depth: 0   # full history required
 
       - name: Determine changed services
         id: detect
@@ -28,37 +27,37 @@ jobs:
             | cut -d/ -f2 \
             | grep -v '^infra$' \
             | sort -u)
-          echo "CHANGED=$CHANGED"
+
+          echo "CHANGED=$CHANGED" >> $GITHUB_ENV
 
       - name: Detect newly added services (directories)
         id: detect-new
         run: |
-          ALL_SERVICES=$(find app -maxdepth 1 -mindepth 1 -type d | cut -d/ -f2 | grep -v '^infra$' | sort -u)
-          echo "ALL_SERVICES=$ALL_SERVICES"
+          # All directories under app/, exclude infra
+          ALL_SERVICES=$(find app -maxdepth 1 -mindepth 1 -type d \
+            | cut -d/ -f2 \
+            | grep -v '^infra$' \
+            | sort -u)
+
+          echo "ALL_SERVICES=$ALL_SERVICES" >> $GITHUB_ENV
 
       - name: Merge changed and new services
         id: merge
         run: |
-          # Split CHANGED by comma and normalize line endings
-          CHANGED_LINES=$(echo "$CHANGED" | tr ',' '\n' | tr -d '\r' | grep -v '^$')
-          
-          # Merge with ALL_SERVICES and remove duplicates
-          MERGED=$(echo -e "$CHANGED_LINES\n$ALL_SERVICES" | tr -d '\r' | grep -v '^$' | sort -u)
-          
-          # Fallback if empty
+          MERGED=$(echo -e "$CHANGED\n$ALL_SERVICES" | grep -v '^$' | sort -u)
           if [ -z "$MERGED" ]; then
-            echo "⚠️ No changes detected — defaulting to all services"
+            echo "⚠️ No changes detected — scanning all services!"
             MERGED=$ALL_SERVICES
           fi
-          
+
           # Convert to JSON array
-          MERGED_JSON=$(echo "$MERGED" | jq -R . | jq -s .)
-          
+          MERGED_JSON=$(printf '%s\n' $MERGED | jq -R . | jq -s .)
           echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT
           echo "Merged services JSON: $MERGED_JSON"
 
-      - name: Set output
+      - name: Output result
         id: set-output
         run: |
-          # Re-use MERGED_JSON from previous step
+          # Use merged JSON for output
           echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT
+

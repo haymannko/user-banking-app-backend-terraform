@@ -55,11 +55,11 @@ jobs:
           MERGED=$ALL_SERVICES
           fi
   
-         # Convert to JSON array
-         MERGED_JSON=$(printf '%s\n' $MERGED | jq -R . | jq -s .)
+          # Convert to JSON array
+          MERGED_JSON=$(printf '%s\n' $MERGED | jq -R . | jq -s .)
   
-          echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT
-          echo "Merged services JSON: $MERGED_JSON"
+            echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT
+            echo "Merged services JSON: $MERGED_JSON"
           
 
       - name: Output result

@@ -1,10 +1,10 @@
-name: Detect Changed Services
+name: Detect Changed or New Services
 
 on:
   workflow_call:
     outputs:
       changed-services:
-        description: "List of changed or newly added services (excluding infra)"
+        description: "List of changed or newly added services"
         value: ${{ jobs.detect.outputs.changed-services }}
 
 jobs:
@@ -14,52 +14,46 @@ jobs:
       changed-services: ${{ steps.set-output.outputs.services }}
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Detect changed services
-        id: detect
+        id: detect-changed
         run: |
-          # Detect changes under app/ (exclude infra)
           CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
             | grep '^app/' \
             | cut -d/ -f2 \
             | grep -v '^infra$' \
             | sort -u)
-          
-          echo "CHANGED=$CHANGED"
 
-      - name: Detect all services
-        id: all-services
+          echo "Changed services: $CHANGED"
+
+      - name: Detect newly added services
+        id: detect-new
         run: |
-          # All directories under app/, exclude infra
-          ALL_SERVICES=$(find app -maxdepth 1 -mindepth 1 -type d \
+          NEW=$(find app -maxdepth 1 -mindepth 1 -type d \
             | cut -d/ -f2 \
             | grep -v '^infra$' \
-            | sort -u)
-          
-          echo "ALL_SERVICES=$ALL_SERVICES"
+            | while read d; do
+                # Check if the directory was added in this push
+                if git diff --name-status ${{ github.event.before }} ${{ github.sha }} | grep -q "^A\sapp/$d"; then
+                  echo $d
+                fi
+              done)
 
-      - name: Merge changed and new services
-        id: merge
-        run: |
-          # Merge changed and all directories to catch new services
-          MERGED=$(echo -e "$CHANGED\n$ALL_SERVICES" | grep -v '^$' | sort -u)
+          echo "New services: $NEW"
 
-          if [ -z "$MERGED" ]; then
-            echo "⚠️ No changes detected — using all services"
-            MERGED=$ALL_SERVICES
-          fi
-
-          # Convert to proper JSON array
-          MERGED_JSON=$(printf '%s\n' $MERGED | jq -R . | jq -s .)
-
-          echo "Merged services JSON: $MERGED_JSON"
-          echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT
-
-      - name: Set output
+      - name: Combine changed + new services
         id: set-output
         run: |
-          echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT
+          ALL_SERVICES=$(echo -e "$CHANGED\n$NEW" | grep -v '^$' | sort -u)
+          if [ -z "$ALL_SERVICES" ]; then
+            echo "No changed or new services detected."
+            echo "services=[]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          SERVICES_JSON=$(printf '%s\n' $ALL_SERVICES | jq -R . | jq -s .)
+          echo "Services to process: $SERVICES_JSON"
+          echo "services=$SERVICES_JSON" >> $GITHUB_OUTPUT

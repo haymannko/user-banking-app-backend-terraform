@@ -52,6 +52,6 @@ jobs:
             exit 0
           fi
 
-          JSON=$(printf '%s\n' $LIST | jq -R . | jq -s .)
+          JSON=$(printf '%s\n' $LIST | jq -R . | jq -s -c .)
           echo "Services JSON: $JSON"
           echo "services=$JSON" >> $GITHUB_OUTPUT

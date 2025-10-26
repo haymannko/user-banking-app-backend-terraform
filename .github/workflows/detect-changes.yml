@@ -48,17 +48,16 @@ jobs:
         run: |
           MERGED=$(echo -e "$CHANGED\n$ALL_SERVICES" | grep -v '^$' | sort -u)
           if [ -z "$MERGED" ]; then
-          echo "⚠️ No changes detected — scanning all services!"
-          MERGED=$ALL_SERVICES
+            echo "⚠️ No changes detected — scanning all services!"
+            MERGED=$ALL_SERVICES
           fi
 
-    # Convert to JSON array
-         MERGED_JSON=$(printf '%s\n' $MERGED | jq -R . | jq -s .)
-    
-    # Output to GitHub Actions
+          # Convert to JSON array
+          MERGED_JSON=$(printf '%s\n' $MERGED | jq -R . | jq -s .)
+
+          # Output to GitHub Actions
           echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT
           echo "Merged services JSON: $MERGED_JSON"
-
 
       - name: Output result
         id: set-output

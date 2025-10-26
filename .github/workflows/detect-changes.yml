@@ -39,21 +39,21 @@ jobs:
       - name: Merge changed and new services
         id: merge
         run: |
-          # Split CHANGED by comma
-          CHANGED_LINES=$(echo "$CHANGED" | tr ',' '\n' | grep -v '^$')
-
-          # Merge with ALL_SERVICES
-          MERGED=$(echo -e "$CHANGED_LINES\n$ALL_SERVICES" | grep -v '^$' | sort -u)
-
+          # Split CHANGED by comma and normalize line endings
+          CHANGED_LINES=$(echo "$CHANGED" | tr ',' '\n' | tr -d '\r' | grep -v '^$')
+          
+          # Merge with ALL_SERVICES and remove duplicates
+          MERGED=$(echo -e "$CHANGED_LINES\n$ALL_SERVICES" | tr -d '\r' | grep -v '^$' | sort -u)
+          
           # Fallback if empty
           if [ -z "$MERGED" ]; then
             echo "⚠️ No changes detected — defaulting to all services"
             MERGED=$ALL_SERVICES
           fi
-
+          
           # Convert to JSON array
           MERGED_JSON=$(echo "$MERGED" | jq -R . | jq -s .)
-
+          
           echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT
           echo "Merged services JSON: $MERGED_JSON"
 

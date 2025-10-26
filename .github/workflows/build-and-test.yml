@@ -9,14 +9,16 @@ on:
 
 jobs:
   build-test:
+    if: ${{ needs.detect-changes.outputs.changed-services != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJson(inputs.changed-services || '[]') }}
+        service: ${{ fromJson(needs.detect-changes.outputs.changed-services) }}
 
     steps:
       - name: Checkout code
+
         uses: actions/checkout@v3
 
       # ======================

@@ -2,6 +2,7 @@ package com.personalbanking.qrtopay.dto;
 
 public record QRDto(
         String name,
-        Long AccountId
+        Long AccountId,
+        String QRCode
 ) {
 }

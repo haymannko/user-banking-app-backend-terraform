@@ -17,57 +17,35 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # full history required
+          fetch-depth: 0
 
-      - name: Determine changed services
+      - name: Detect changed services
         id: detect
         run: |
-          # Detect changes under app/
           CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-            | grep '^app/' \
-            | cut -d/ -f2 \
-            | sort -u \
-            | tr '\n' ',' \
-            | sed 's/,$//')
+            | grep '^app/' | cut -d/ -f2 | grep -v '^infra$' | sort -u)
+          echo "CHANGED=$CHANGED"
 
-          echo "CHANGED=$CHANGED" >> $GITHUB_ENV
-
-      - name: Detect newly added services (directories)
+      - name: Detect newly added services
         id: detect-new
         run: |
-          # All directories under app/
-          ALL_SERVICES=$(find app -maxdepth 1 -type d -not -path 'app' | cut -d/ -f2 | tr '\n' ',' | sed 's/,$//')
-          echo "ALL_SERVICES=$ALL_SERVICES" >> $GITHUB_ENV
+          ALL_SERVICES=$(find app -maxdepth 1 -type d -not -path 'app' -not -name 'infra' | cut -d/ -f2)
+          echo "ALL_SERVICES=$ALL_SERVICES"
 
-      - name: Merge changed and new services
+      - name: Merge changed + new services
         id: merge
         run: |
-          MERGED=$(echo "${CHANGED},${ALL_SERVICES}" | tr ',' '\n' | sort -u | tr '\n' ',' | sed 's/,$//')
-          echo "MERGED=$MERGED" >> $GITHUB_ENV
-
-      - name: Fallback if empty
-        id: fallback
-        run: |
+          MERGED=$(echo -e "$CHANGED\n$ALL_SERVICES" | sort -u)
           if [ -z "$MERGED" ]; then
-            echo "⚠️ No diff detected — scanning all services!"
+            echo "⚠️ No changes detected, defaulting to ALL_SERVICES"
             MERGED=$ALL_SERVICES
           fi
-          echo "SERVICES=$MERGED" >> $GITHUB_ENV
+          # convert to JSON array
+          MERGED_JSON=$(printf '%s\n' $MERGED | jq -R . | jq -s .)
+          echo "SERVICES=$MERGED_JSON" >> $GITHUB_OUTPUT
+          echo "Merged services JSON: $MERGED_JSON"
 
-      - name: Output result (JSON format)
+      - name: Set output
         id: set-output
         run: |
-          if [ -z "$SERVICES" ]; then
-            echo "No services changed. Returning empty array."
-            echo 'services=[]' >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Convert comma-separated string into JSON array
-          JSON=$(echo "$SERVICES" | tr ',' '\n' | jq -R . | jq -cs .)
-          echo "Services JSON: $JSON"
-          echo "services=$JSON" >> $GITHUB_OUTPUT
-      
-
-      
-
+          echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT

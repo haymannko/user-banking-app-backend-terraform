@@ -46,25 +46,21 @@ jobs:
       - name: Merge changed and new services
         id: merge
         run: |
-          # Split CHANGED by newline, remove empty lines
-          CHANGED_LINES=$(echo "$CHANGED" | tr ',' '\n' | grep -v '^$')
-
-          # Split ALL_SERVICES by newline (already line-separated)
-          ALL_LINES=$(echo "$ALL_SERVICES" | tr ',' '\n' | grep -v '^$')
-
-          # Merge and deduplicate
-          MERGED=$(echo -e "$CHANGED_LINES\n$ALL_LINES" | sort -u | grep -v '^$')
-
+          # Merge changed and new services
+          MERGED=$(echo -e "$CHANGED\n$ALL_SERVICES" | grep -v '^$' | grep -v '^infra$' | sort -u)
+  
+          # Fallback if empty
           if [ -z "$MERGED" ]; then
-            echo "⚠️ No changes detected — using all services"
-            MERGED=$ALL_LINES
+          echo "⚠️ No changes detected — using all services"
+          MERGED=$ALL_SERVICES
           fi
-
-          # Convert to JSON array
-          MERGED_JSON=$(printf '%s\n' $MERGED | jq -R . | jq -s .)
-
+  
+         # Convert to JSON array
+         MERGED_JSON=$(printf '%s\n' $MERGED | jq -R . | jq -s .)
+  
           echo "services=$MERGED_JSON" >> $GITHUB_OUTPUT
           echo "Merged services JSON: $MERGED_JSON"
+          
 
       - name: Output result
         id: set-output

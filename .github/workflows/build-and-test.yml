@@ -9,6 +9,8 @@ on:
 
 jobs:
   build-test:
+    # conditional rundering
+    if: ${{ inputs.services != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

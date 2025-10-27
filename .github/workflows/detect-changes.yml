@@ -22,36 +22,42 @@ jobs:
         id: changed
         run: |
           CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-            | grep '^app/' \
+            | grep '^app/' || true \
             | cut -d/ -f2 \
-            | grep -v '^infra$' \
+            | grep -v '^infra$' || true \
             | sort -u)
 
+          echo "Detected changed services: $CHANGED"
           echo "CHANGED=$CHANGED" >> $GITHUB_ENV
-          echo "Changed: $CHANGED"
 
       - name: Detect newly added services
         id: new
         run: |
           NEW=$(git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
-            | grep '^A\sapp/' \
+            | grep '^A\sapp/' || true \
             | cut -f2 \
             | cut -d/ -f2 \
-            | grep -v '^infra$' \
+            | grep -v '^infra$' || true \
             | sort -u)
 
+          echo "Detected new services: $NEW"
           echo "NEW=$NEW" >> $GITHUB_ENV
-          echo "New: $NEW"
 
       - name: Generate Output JSON
         id: output
         run: |
+          # Merge changed + new (unique)
           LIST=$(echo -e "$CHANGED\n$NEW" | grep -v '^$' | sort -u)
+
+          echo "Final service list: $LIST"
+
+          # No changed services → empty JSON array
           if [ -z "$LIST" ]; then
             echo "services=[]" >> $GITHUB_OUTPUT
             exit 0
           fi
 
+          # Create JSON array
           JSON=$(printf '%s\n' $LIST | jq -R . | jq -s -c .)
-          echo "Services JSON: $JSON"
           echo "services=$JSON" >> $GITHUB_OUTPUT
+          echo "✅ Services JSON: $JSON"

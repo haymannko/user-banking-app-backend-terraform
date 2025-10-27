@@ -51,11 +51,10 @@ jobs:
           CURRENT_SHA="${{ github.sha }}"
 
           NEW=$(git diff --name-status "$BEFORE_SHA" "$CURRENT_SHA" \
-            | grep -E '^A\s+app/' || true \
-            | awk '{print $2}' \
-            | cut -d/ -f2 \
-            | grep -v '^infra$' \
-            | sort -u || true)
+          | awk '/^A\s+app\// {print $2}' \
+          | cut -d/ -f2 \
+          | grep -v '^infra$' \
+          | sort -u || true)
 
           echo "New services: $NEW"
           echo "NEW=$NEW" >> $GITHUB_ENV
@@ -63,13 +62,17 @@ jobs:
       - name: Create final services JSON output
         id: output
         run: |
-          LIST=$(echo -e "$CHANGED\n$NEW" | grep -v '^$' | sort -u || true)
+          LIST=$(echo -e "$CHANGED\n$NEW" \
+          | grep -E '^[a-zA-Z0-9_-]+$' \
+          | grep -v '^infra$' \
+          | sort -u || true)
+
           echo "FINAL SERVICE LIST: $LIST"
 
           if [ -z "$LIST" ]; then
-            echo "✅ No service changes detected → skipping builds"
-            echo "services=[]" >> $GITHUB_OUTPUT
-            exit 0
+          echo "✅ No service changes detected → skipping builds"
+          echo "services=[]" >> $GITHUB_OUTPUT
+          exit 0
           fi
 
           JSON=$(printf '%s\n' $LIST | jq -R . | jq -s -c .)

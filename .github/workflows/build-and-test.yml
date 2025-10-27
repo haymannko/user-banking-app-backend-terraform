@@ -5,31 +5,28 @@ on:
     inputs:
       changed-services:
         required: true
-        type: string  # JSON array string like ["gateway-service","QRtoPay"]
+        type: string
 
 jobs:
   build-test:
-    # conditional rundering
-    if: ${{ inputs.services != '[]' && inputs.services != '' }}
+    if: ${{ inputs.changed-services != '[]' && inputs.changed-services != '' }}
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
         service: ${{ fromJson(inputs.changed-services) }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build ${{ matrix.service }}
+      - name: Build & Test
         working-directory: app/${{ matrix.service }}
-        run: mvn -B clean package -DskipTests
+        run: |
+          mvn -B clean test
 
-      - name: Test ${{ matrix.service }}
-        working-directory: app/${{ matrix.service }}
-        run: mvn test
-
-      - name: Docker build & push (only on PR dev → main)
+      - name: Docker build & push (only PR → main)
         if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
         working-directory: app/${{ matrix.service }}
         run: |

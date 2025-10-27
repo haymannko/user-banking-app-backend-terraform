@@ -4,5 +4,7 @@ public class FeatureOneController {
 
     static String featureOneController = "FeatureOneController";
 
+    static String featureOneController2 = "FeatureOneController2";
+
 
 }

@@ -42,7 +42,11 @@ jobs:
             | sort -u || true)
 
           echo "Changed services: $CHANGED"
-          echo "CHANGED=$CHANGED" >> $GITHUB_ENV
+          {
+          echo "CHANGED<<EOF"
+          echo "$CHANGED"
+          echo "EOF"
+          } >> "$GITHUB_ENV"
 
       - name: Detect newly added services
         id: detect_new
@@ -57,7 +61,11 @@ jobs:
           | sort -u || true)
 
           echo "New services: $NEW"
-          echo "NEW=$NEW" >> $GITHUB_ENV
+            {
+            echo "CHANGED<<EOF"
+            echo "$CHANGED"
+            echo "EOF"
+            } >> "$GITHUB_ENV"
 
       - name: Create final services JSON output
         id: output

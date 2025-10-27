@@ -2,7 +2,6 @@ name: Detect Changed or New Services
 
 on:
   workflow_call:
-    # output for inputs: values inputs build and test jobs
     outputs:
       changed-services:
         value: ${{ jobs.detect.outputs.changed-services }}
@@ -19,56 +18,73 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine before commit
+      - name: Ensure SAFE before SHA
         id: refs
         run: |
           BEFORE_SHA="${{ github.event.before }}"
           if [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
-            BEFORE_SHA=$(git rev-list --max-parents=0 HEAD)
+            BEFORE_SHA=$(git rev-list --max-parents=0 HEAD) # first commit
           fi
           echo "before-sha=$BEFORE_SHA" >> $GITHUB_OUTPUT
 
       - name: Detect changed services
         id: detect_changed
         run: |
-          BEFORE="${{ steps.refs.outputs.before-sha }}"
-          NOW="${{ github.sha }}"
+          BEFORE_SHA="${{ steps.refs.outputs.before-sha }}"
+          CURRENT_SHA="${{ github.sha }}"
 
-          CHANGED=$(git diff --name-only "$BEFORE" "$NOW" \
+          CHANGED=$(git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" \
             | grep '^app/' \
             | grep -v '^app/infra/' \
             | cut -d/ -f2 \
+            | grep -v '^infra$' \
             | sort -u || true)
 
-          echo "CHANGED<<EOF" >> $GITHUB_ENV
-          echo "$CHANGED" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          echo "Changed services: $CHANGED"
+          {
+            echo "CHANGED<<EOF"
+            echo "$CHANGED"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
       - name: Detect newly added services
         id: detect_new
         run: |
-          BEFORE="${{ steps.refs.outputs.before-sha }}"
-          NOW="${{ github.sha }}"
+          BEFORE_SHA="${{ steps.refs.outputs.before-sha }}"
+          CURRENT_SHA="${{ github.sha }}"
 
-          NEW=$(git diff --name-status "$BEFORE" "$NOW" \
+          NEW=$(git diff --name-status "$BEFORE_SHA" "$CURRENT_SHA" \
             | awk '/^A\s+app\// {print $2}' \
             | cut -d/ -f2 \
+            | grep -v '^infra$' \
             | sort -u || true)
 
-          echo "NEW<<EOF" >> $GITHUB_ENV
-          echo "$NEW" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          echo "New services: $NEW"
+          {
+            echo "NEW<<EOF"
+            echo "$NEW"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
-      - name: Create services JSON output
+      - name: Create final services JSON output
         id: output
         run: |
-          LIST=$(echo -e "$CHANGED\n$NEW" | grep -E '^[a-zA-Z0-9_-]+$' | sort -u)
-          echo "FINAL LIST: $LIST"
+          CHANGED="${CHANGED:-}"
+          NEW="${NEW:-}"
+
+          LIST=$(echo -e "$CHANGED\n$NEW" \
+            | grep -E '^[a-zA-Z0-9_-]+$' \
+            | grep -v '^infra$' \
+            | sort -u || true)
+
+          echo "FINAL SERVICE LIST: $LIST"
 
           if [ -z "$LIST" ]; then
+            echo "✅ No service changes detected → skipping builds"
             echo "services=[]" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           JSON=$(printf '%s\n' $LIST | jq -R . | jq -s -c .)
           echo "services=$JSON" >> $GITHUB_OUTPUT
+          echo "✅ Services JSON generated: $JSON"

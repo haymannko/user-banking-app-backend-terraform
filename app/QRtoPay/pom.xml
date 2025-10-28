@@ -1,29 +1,36 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
-
-    <!-- Spring Boot parent to manage dependency versions -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.2</version>
+        <version>3.5.7</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-
-    <groupId>com.corporatebanking</groupId>
-    <artifactId>personal-transaction-service</artifactId>
+    <groupId>com.personalbanking</groupId>
+    <artifactId>QRtoPay</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>personal-transaction-service</name>
-    <description>Service for managing pesonal-transaction-service in the corporate banking system</description>
-
+    <name>QRtoPay</name>
+    <description>QRtoPay</description>
+    <url/>
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <scm>
+        <connection/>
+        <developerConnection/>
+        <tag/>
+        <url/>
+    </scm>
     <properties>
         <java.version>17</java.version>
         <protobuf.version>3.24.1</protobuf.version>
         <grpc.version>1.57.0</grpc.version>
     </properties>
-
     <dependencies>
         <!-- Spring Boot dependencies -->
         <dependency>
@@ -143,4 +150,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

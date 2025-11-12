@@ -88,16 +88,12 @@ jobs:
           aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
           docker push ${{ steps.build_image.outputs.image_name }}
 
-      - name: Save Docker image as artifact
-        run: |
-          docker save ${{ steps.build_image.outputs.image_name }} -o /tmp/${{ matrix.service }}-image.tar
-
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.service }}-docker-image
-          path: /tmp/${{ matrix.service }}-image.tar
-          retention-days: 1
+          name: ${{ matrix.service }}-image
+          path: app/${{ matrix.service }}/
+
 
   local-k8s-test:
     needs: build-test

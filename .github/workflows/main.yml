@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
@@ -18,3 +22,4 @@ jobs:
     uses: ./.github/workflows/build-and-test.yml
     with:
       changed-services: ${{ needs.detect-changes.outputs.changed-services }}
+    secrets: inherit

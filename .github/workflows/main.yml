@@ -23,24 +23,3 @@ jobs:
     with:
       changed-services: ${{ needs.detect-changes.outputs.changed-services }}
     secrets: inherit
-
-  # trigger-deployment:
-  #   needs: [detect-changes, build-test]
-  #   if: ${{ github.ref == 'refs/heads/main' && needs.detect-changes.outputs.changed-services != '[]' }}
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Trigger deployment in CD repository
-  #       run: |
-  #         curl -X POST \
-  #           -H "Accept: application/vnd.github.v3+json" \
-  #           -H "Authorization: token ${{ secrets.CD_REPO_PAT }}" \
-  #           https://api.github.com/repos/${{ secrets.CD_REPO_OWNER }}/${{ secrets.CD_REPO_NAME }}/dispatches \
-  #           -d '{
-  #             "event_type": "deploy",
-  #             "client_payload": {
-  #               "services": ${{ needs.detect-changes.outputs.changed-services }},
-  #               "image_tag": "${{ github.sha }}",
-  #               "triggered_by": "${{ github.actor }}",
-  #               "source_repo": "${{ github.repository }}"
-  #             }
-  #           }'

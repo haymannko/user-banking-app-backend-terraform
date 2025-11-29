@@ -46,7 +46,7 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Configure AWS credentials
-        if: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME != '' && secrets.AWS_REGION != '' }}
+        continue-on-error: true
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME }} 
@@ -58,7 +58,7 @@ jobs:
           mvn -B clean install
 
       - name: SonarQube Scan
-        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
+        continue-on-error: true
         uses: sonarsource/sonarqube-scan-action@master
         with:
           projectBaseDir: app/${{ matrix.service }}

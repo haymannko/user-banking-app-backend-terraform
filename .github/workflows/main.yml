@@ -19,7 +19,7 @@ jobs:
   build-test:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.changed-services != '[]' }}
-    uses: ./.github/workflows/build-and-test-minimal.yml
+    uses: ./.github/workflows/build-and-test.yml
     with:
       changed-services: ${{ needs.detect-changes.outputs.changed-services }}
     secrets: inherit

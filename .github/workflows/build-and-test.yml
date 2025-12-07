@@ -16,7 +16,7 @@ jobs:
     strategy:
     fail-fast: false
       matrix:
-      service: ${{ fromJson(inputs.changed-services) }}
+        service: ${{ fromJson(inputs.changed-services) }}
 
     env:
       ECR_REGISTRY: ${{ secrets.AWS_ECR_REGISTRY }} 

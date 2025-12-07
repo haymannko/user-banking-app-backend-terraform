@@ -1,6 +1,6 @@
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 
-WORKDIR /app
+WORKDIR /app1
 COPY . .
 
 # Build whole project so parent POM is installed

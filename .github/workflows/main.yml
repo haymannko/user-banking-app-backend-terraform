@@ -1,0 +1,31 @@
+name: Microservice CI/CD
+
+on:
+  push:
+    branches:
+      - 'ft/*'
+      - dev
+  pull_request:
+    branches:
+      - main
+
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
+  build-test:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.changed-services != '[]' }}
+    uses: ./.github/workflows/build-and-test.yml
+    with:
+      changed-services: ${{ needs.detect-changes.outputs.changed-services }}
+    secrets: inherit

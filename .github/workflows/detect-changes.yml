@@ -69,8 +69,8 @@ jobs:
       - name: Create final services JSON output
         id: output
         run: |
-          CHANGED="${CHANGED:-}"
-          NEW="${NEW:-}"
+          CHANGED="$CHANGED"
+          NEW="$NEW"
 
           LIST=$(echo -e "$CHANGED\n$NEW" \
             | grep -E '^[a-zA-Z0-9_-]+$' \

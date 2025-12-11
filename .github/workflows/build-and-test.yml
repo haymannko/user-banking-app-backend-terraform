@@ -1,20 +1,20 @@
 name: Build & Test Services
 
-  #on:
-  #  push:
-  #    branches:
-  #      - 'ft/*'
-  #      - dev
-  #  pull_request:
-  #    branches:
-  #      - main
-
 on:
-  workflow_call:
-    inputs:
-      changed-services:
-        required: true
-        type: string
+  push:
+    branches:
+      - 'ft/*'
+      - dev
+  pull_request:
+    branches:
+      - main
+
+  #on:
+  #  workflow_call:
+  #    inputs:
+  #      changed-services:
+  #        required: true
+  #        type: string
 
 permissions:
   id-token: write
@@ -22,13 +22,24 @@ permissions:
 
 jobs:
   build-test:
-    if: ${{ inputs.changed-services != '[]' && inputs.changed-services != '' }}
+    #if: ${{ inputs.changed-services != '[]' && inputs.changed-services != '' }}
     runs-on: ubuntu-latest
+
+      #  strategy:
+      #    fail-fast: false
+      #    matrix:
+      #      service: ${{ fromJson(inputs.changed-services) }}
 
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJson(inputs.changed-services) }}
+        service: [
+          gateway-service,
+          nickname-service,
+          personal-user-service,
+          personal-transaction-service,
+          QRtoPay
+          ]
 
     env:
       ECR_REGISTRY: ${{ secrets.AWS_ECR_REGISTRY }} 
@@ -86,7 +97,7 @@ jobs:
       #     severity: 'CRITICAL,HIGH'
 
       - name: Push Docker image to ECR
-        # if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' || github.ref_name == 'main' }}
+        if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' || github.ref_name == 'main' }}
         run: |
           aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
           docker push ${{ steps.build_image.outputs.image_name }}

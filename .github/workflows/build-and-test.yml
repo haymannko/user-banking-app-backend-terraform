@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   build-test:
-    #if: ${{ inputs.changed-services != '[]' && inputs.changed-services != '' }}
+    if: ${{ inputs.changed-services != '[]' && inputs.changed-services != '' }}
     runs-on: ubuntu-latest
 
       #  strategy:

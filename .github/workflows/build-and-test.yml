@@ -1,20 +1,20 @@
 name: Build & Test Services
 
-on:
-  push:
-    branches:
-      - 'ft/*'
-      - dev
-  pull_request:
-    branches:
-      - main
-
   #on:
-  #  workflow_call:
-  #    inputs:
-  #      changed-services:
-  #        required: true
-  #        type: string
+  #  push:
+  #    branches:
+  #      - 'ft/*'
+  #      - dev
+  #  pull_request:
+  #    branches:
+  #      - main
+
+on:
+  workflow_call:
+    inputs:
+      changed-services:
+        required: true
+        type: string
 
 permissions:
   id-token: write

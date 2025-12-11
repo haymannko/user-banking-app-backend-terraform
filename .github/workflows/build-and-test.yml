@@ -142,7 +142,7 @@ jobs:
 
           IMAGE_NAME=${{ steps.build_image.outputs.image_name }}
           echo "Pushing image: $IMAGE_NAME"
-        docker push $IMAGE_NAME
+          docker push $IMAGE_NAME
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

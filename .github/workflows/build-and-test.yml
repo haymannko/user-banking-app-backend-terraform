@@ -136,7 +136,7 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           ECR_REGISTRY: ${{ secrets.AWS_ECR_REGISTRY }}
           ECR_REPOSITORY: ${{ matrix.service }}
-            # run: |
+        run: |
             #   echo "Logging in to ECR: $ECR_REGISTRY"
             #   aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 

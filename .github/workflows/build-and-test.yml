@@ -1,11 +1,20 @@
 name: Build & Test Services
 
 on:
-  workflow_call:
-    inputs:
-      changed-services:
-        required: true
-        type: string
+  push:
+    branches:
+      - 'ft/*'
+      - dev
+  pull_request:
+    branches:
+      - main
+
+        #on:
+        #  workflow_call:
+        #    inputs:
+        #      changed-services:
+        #        required: true
+        #        type: string
 
 permissions:
   id-token: write
@@ -13,13 +22,13 @@ permissions:
 
 jobs:
   build-test:
-    if: ${{ inputs.changed-services != '[]' && inputs.changed-services != '' }}
-    runs-on: ubuntu-latest
+    #if: ${{ inputs.changed-services != '[]' && inputs.changed-services != '' }}
+    #runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        service: ${{ fromJson(inputs.changed-services) }}
+    # strategy:
+    #   fail-fast: false
+    #   matrix:
+    #     service: ${{ fromJson(inputs.changed-services) }}
 
     env:
       ECR_REGISTRY: ${{ secrets.AWS_ECR_REGISTRY }} 

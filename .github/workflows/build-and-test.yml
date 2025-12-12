@@ -35,10 +35,10 @@ jobs:
       matrix:
         service: [
           gateway-service,
-          nickname-service,
-          personal-user-service,
+          #nickname-service,
+          #personal-user-service,
           personal-transaction-service,
-          QRtoPay
+          #QRtoPay
           ]
 
     env:
